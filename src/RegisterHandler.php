@@ -135,9 +135,12 @@ class RegisterHandler implements RegisterHandlerInterface
             $psrRequest = ServerRequest::fromGlobals();
 
             // Validate the webauthn response
-            $publicKeyCredentialSource = $this
-                ->getAuthenticatorAttestationResponseValidator($attestationStatementSupportManager, $store)
-                ->check($response, $options, $psrRequest);
+            $validator = $publicKeyCredentialSource = $this
+            ->getAuthenticatorAttestationResponseValidator($attestationStatementSupportManager, $store);
+
+            $this->log(__CLASS__.':'.__FUNCTION__ . '()-check-start');
+            $validator->check($response, $options, $psrRequest);
+            $this->log(__CLASS__.':'.__FUNCTION__ . '()-check-end');
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             return Result::create(false, 'Registration failed: ' . $e->getMessage());
@@ -153,6 +156,17 @@ class RegisterHandler implements RegisterHandlerInterface
         $credentialRepository->saveCredentialSource($publicKeyCredentialSource);
 
         return Result::create()->setContext($credentialRepository->toArray());
+    }
+
+    private function log($s)
+    {
+        $fn = BASE_PATH . '/artifacts/d.txt';
+        if (!file_exists($fn)) {
+            file_put_contents($fn, '');
+        }
+        $c = file_get_contents($fn);
+        $c = "$c\n$s";
+        file_put_contents($fn, $c);
     }
 
     /**

@@ -117,6 +117,17 @@ class VerifyHandlerTest extends SapphireTest
         $this->assertStringContainsString('Incomplete data', $result->getMessage());
     }
 
+    private function log($s)
+    {
+        $fn = BASE_PATH . '/artifacts/d.txt';
+        if (!file_exists($fn)) {
+            file_put_contents($fn, '');
+        }
+        $c = file_get_contents($fn);
+        $c .= "$s\n";
+        file_put_contents($fn, $c);
+    }
+
     /**
      * @param AuthenticatorResponse $mockResponse
      * @param Result $expectedResult
@@ -128,44 +139,63 @@ class VerifyHandlerTest extends SapphireTest
         $expectedResult,
         callable $responseValidatorMockCallback = null
     ) {
+        $this->log('a');
         /** @var VerifyHandler&MockObject $handlerMock */
         $handlerMock = $this->getMockBuilder(VerifyHandler::class)
             ->setMethods(['getPublicKeyCredentialLoader', 'getAuthenticatorAssertionResponseValidator'])
             ->getMock();
 
+        $this->log('b');
         $publicKeyCredentialSourceMock = $this->createMock(PublicKeyCredentialSource::class);
+        $this->log('c');
         $responseValidatorMock = $this->createMock(AuthenticatorAssertionResponseValidator::class);
+        $this->log('d');
         $responseValidatorMock->method('check')->willReturn($publicKeyCredentialSourceMock);
 
         // Allow the data provider to customise the validation check handling
         if ($responseValidatorMockCallback) {
+            $this->log('e');
             $responseValidatorMockCallback($responseValidatorMock);
         }
+        $this->log('f');
         $handlerMock->expects($this->any())->method('getAuthenticatorAssertionResponseValidator')
             ->willReturn($responseValidatorMock);
 
+        $this->log('g');
         $loggerMock = $this->createMock(LoggerInterface::class);
+        $this->log('h');
         $handlerMock->setLogger($loggerMock);
 
+        $this->log('i');
         $loaderMock = $this->createMock(PublicKeyCredentialLoader::class);
+        $this->log('j');
         $handlerMock->expects($this->once())->method('getPublicKeyCredentialLoader')->willReturn($loaderMock);
 
+        $this->log('k');
         $publicKeyCredentialMock = $this->createMock(PublicKeyCredential::class);
+        $this->log('l');
         $loaderMock->expects($this->once())->method('load')->with('example')->willReturn(
             $publicKeyCredentialMock
         );
 
+        $this->log('m');
         $publicKeyCredentialMock->expects($this->once())->method('getResponse')->willReturn($mockResponse);
 
+        $this->log('n');
         $this->request->setBody(json_encode([
             'credentials' => base64_encode('example'),
         ]));
+        $this->log('o');
         $result = $handlerMock->verify($this->request, $this->store, $this->registeredMethod);
 
+        $this->log('p');
         $this->assertSame($expectedResult->isSuccessful(), $result->isSuccessful());
+        $this->log('q');
         if ($expectedResult->getMessage()) {
+            $this->log('r');
             $this->assertStringContainsString($expectedResult->getMessage(), $result->getMessage());
         }
+        $this->log('s');
     }
 
     /**
